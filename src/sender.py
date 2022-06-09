@@ -10,7 +10,6 @@ def peer2peer(context, port, message):
         try:
             socket = context.socket(zmq.REQ)
             socket.connect(f"tcp://localhost:{port}")
-            # print(f"Sending message {message} to port {port}")
             send_json(socket, message)
             recv_json(socket)
             break
@@ -19,6 +18,7 @@ def peer2peer(context, port, message):
 
 
 class Sender:
+    """ Class Sender handles sending of all messages """
     def __init__(self, sender_port, peers, port_to_id, request):
         self.req_id = 0
         self.peers = peers
@@ -28,6 +28,7 @@ class Sender:
         self.request = request
 
     def broadcast_appendEntries(self, is_heartbeat):
+        """ Broadcasts node-specific appendEntries RPC in its own thread """
         Thread(target=self.broadcast_appendEntries_helper, args=[is_heartbeat]).start()
 
     def broadcast_appendEntries_helper(self, is_heartbeat):
@@ -58,7 +59,7 @@ class Sender:
 
         t = Thread(target=peer2peer, args=(self.context, peer_port, message))
         t.start()
-        t.join(timeout=0.002)
+        t.join(timeout=0.002)  # 0.002 s timeout
 
 
 

@@ -4,7 +4,7 @@ LEADER = "Leader"
 
 
 class Reply:
-    """ Lists all possible replies that can be send by nodes"""
+    """Possible replies that can be sent"""
 
     def __init__(self, raftnode):
         self.N = raftnode
@@ -32,7 +32,7 @@ class Reply:
 
 
 class Request:
-    """ Lists out all possible requests that can be sent out by nodes """
+    """Possible requests that can be sent """
 
     def __init__(self, raftnode):
         self.N = raftnode
@@ -55,7 +55,7 @@ class Request:
 
 class ReplyFn:
     """
-    Handles all replying logic for any incoming request
+    Handles replying for any incoming request
     """
 
     def __init__(self, raftnode):
@@ -64,7 +64,7 @@ class ReplyFn:
         self.request = Request(self.N)
 
     def process_append_entries(self, request):
-        """ Election Logic"""
+        """ Receiver implementation for AppendEntries RPC, executed on non-Leader nodes """
 
         self.all_server_rules(request)
         self.N.electionTimeout.restart()
@@ -129,11 +129,6 @@ class ReplyFn:
 
             self.N.log = self.N.log + request["entries"][new_entries_start:]  # append new
 
-        if request["entries"]:
-            print("############### LOG POTENTIALLY UPDATED ######################")
-            print(self.N.log)
-            print("############### LOG POTENTIALLY UPDATED ######################")
-
         # If leaderCommit > commitIndex, set commitIndex = min(leaderCommit, index of last new entry)
         if request["leaderCommit"] > self.N.commitIndex:
             idx_last_new_entry = 0
@@ -148,11 +143,11 @@ class ReplyFn:
         else:
             matchIndex = 0
 
-        print(f"sending back match index {matchIndex}")
         return self.N.sender.spawn_peer2peer(self.reply.APPEND_ENTRIES_SUCCESS(matchIndex), request["sender_port"])
 
     def process_append_entries_response(self, request):
-        # self.all_server_rules(request)
+        """ Processes replies to AppendEntries RPC, executed on Leader nodes """
+        self.all_server_rules(request)
         follower_id = request["node_id"]
 
         self.all_server_rules(request)
@@ -163,9 +158,6 @@ class ReplyFn:
                 print(f"nextIndex is {self.N.nextIndex}")
                 self.N.nextIndex[follower_id] = self.N.matchIndex[follower_id] + 1
 
-                print("#####################################")
-                print("try tp update leader commit index and apply entry")
-                print("############### ######################")
 
             else:
                 self.N.nextIndex[follower_id] -= 1
@@ -176,8 +168,8 @@ class ReplyFn:
             self.N.attempt_apply_entry()
 
     def process_request_vote(self, request):
-        # self.all_server_rules(request)
-
+        """ Receiver implementation for RequestVote RPC, executed on all receiving nodes """
+        self.all_server_rules(request)
 
         logCheck, termCheck, votedForCheck = False, True, False
 
@@ -207,17 +199,20 @@ class ReplyFn:
             self.N.sender.spawn_peer2peer(self.reply.VOTE_WITHHELD_REPLY(), request['sender_port'])
 
     def process_request_vote_response(self, request):
+        """ Processes replies to RequestVote RPC, executed on Candidate nodes  """
+
         self.N.num_votes += request['voteGranted']
         self.check_election_winner()
 
     def check_election_winner(self):
+        """ Switches to leader if majority votes and Candidate node """
         if self.N.num_votes > self.N.MAJORITY and self.N.isRole(CANDIDATE):
             self.N.switchToLeader()
 
     def all_server_rules(self, message):
-        """ rules applied on all servers """
-        # if RPC term greater than currentTerm, set currentTerm = RPC term and convert to follower
+        """ Rules applied on all servers """
 
+        # if RPC term greater than currentTerm, set currentTerm = RPC term and convert to follower
         if message['term'] > self.N.getCurrentTerm():
             self.N.currentTerm = message['term']
             if not self.N.isRole(FOLLOWER):

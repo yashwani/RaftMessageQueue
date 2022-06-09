@@ -6,6 +6,7 @@ class MessageQueue:
         self.data = {}
 
     def process(self, message):
+        """ Applies a client command to the message queue """
         if message["type"] == "topic" and message["method"] == "PUT":
             return self.put_topic(message)
         if message["type"] == "topic" and message["method"] == "GET":
@@ -17,15 +18,16 @@ class MessageQueue:
             return self.get_message(message)
 
     def put_topic(self, message):
+        """ Adds a topic to the message queue """
         m_topic = message['topic']
         if m_topic not in self.data:
             self.data[m_topic] = queue.Queue()
-            #print("reply 1 ######")
             return {'success': True}
         else:
             return {'success': False}
 
     def get_topics(self):
+        """ Gets a list of topics from the message queue """
         return {'success': True, 'topics': list(self.data.keys())}
 
     def put_message(self, message):
@@ -38,12 +40,12 @@ class MessageQueue:
             return {'success': False}
         else:
             self.data[m_topic].put(message['message'])
-            #print("reply 2 #############")
             return {'success': True}
 
     def get_message(self, message):
         """
-            If passed in request, use request fields to get topic message
+            Returns message given a topic.
+            Returns False if no topic or no messages in topic
         """
         m_topic = message['topic']
         if m_topic not in self.data.keys():

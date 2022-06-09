@@ -7,15 +7,15 @@ from raftnode import *
 
 
 def start_external_server(external_port, internal_port, node_id, peer_ports, port_to_id):
-
+    """ Starts the server """
     Raftnode(node_id, external_port, internal_port, peer_ports, port_to_id)
     # Sleep until killed
-
     while True:
         time.sleep(0.1)
 
 
 def parse_config():
+    """ Parses config file """
     port_to_id = {}  # key = port, value = node_id
 
     _this_file_name, config_path, node_id = sys.argv

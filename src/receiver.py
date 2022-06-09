@@ -16,7 +16,6 @@ class Receiver:
         self.socket = context.socket(zmq.REP)
         self.socket.bind(f"tcp://127.0.0.1:{port}")
         self.thread = Thread(target=self.receive_loop)
-        # self.thread.daemon = True
         self.thread.start()
 
     def receive_loop(self):
@@ -27,19 +26,14 @@ class Receiver:
 
         Internal node communication is handled asynchronously. All "replies" to requests are implemented as requests
         by the replying node. Therefore, internal zmq.REP communication uses a dummy reply.
-
         """
         while True:
-            # try:
             request = recv_json(self.socket)  # client message
 
-            reply = self.received_msg_handler(request)
+            reply = self.received_msg_handler(request)  # blocks if external communication
             if self.is_internal_communication():
                 reply = self.reply.DUMMY_REPLY
             send_json(self.socket, reply)
-
-            # except Exception as e:
-            #     print(e)
 
             time.sleep(0.000001)  # allow cooperative scheduling
 

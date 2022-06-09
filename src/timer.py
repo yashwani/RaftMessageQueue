@@ -3,6 +3,10 @@ import random
 
 
 class Timers:
+    """
+        Timers creates a restartable timer which runs function on_expire_fn
+        if timer times out before cancelled or restarted
+    """
     def __init__(self, lo, hi, on_expire_fn, args):
         self.lo = lo
         self.hi = hi
