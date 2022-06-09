@@ -27,4 +27,9 @@ are “dummy” replies. The internal message handler then proceeds based
 on the state of the node and the contents of the message. Finally, given
 the state of the node, an election timer or heartbeat timer is created.
 
-
+Sample system with 3 nodes:
+```azure
+> python3 src/node.py config.json 0 
+> python3 src/node.py config.json 1
+> python3 src/node.py config.json 2 
+```
